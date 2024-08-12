@@ -47,17 +47,114 @@ uint8_t BCD_to_Decimal(uint8_t val);
 HAL_StatusTypeDef DS1307_Write_Register(uint8_t reg, uint8_t data);
 HAL_StatusTypeDef DS1307_Read_Register(uint8_t reg, uint8_t *data);
 HAL_StatusTypeDef DS1307_Set_Time(uint8_t hours, uint8_t minutes, uint8_t seconds);
+HAL_StatusTypeDef DS1307_Set_Date(uint8_t day, uint8_t month, uint8_t year);
 HAL_StatusTypeDef DS1307_Read_Time(uint8_t *timeData);
 
 void SetBuzzerFrequency(uint32_t frequency);
 void PlayMelody(void);
 
 void display_time();
+void enterSetTimeMode();
+void enterSetAlarmMode();
 
 volatile uint8_t flag = 0;
 volatile uint8_t last_minutes = 255;
+volatile uint8_t finish_menu = 0;
 
 void EXTI9_5_IRQHandler(void);
+
+volatile uint8_t setTimeFlag = 0;
+volatile uint8_t setAlarmFlag = 0;
+volatile uint8_t normalModeFlag = 0;
+
+typedef enum {
+    MODE_NORMAL,
+    MODE_SET_TIME,
+    MODE_SET_ALARM
+} SystemMode;
+
+SystemMode currentMode = MODE_NORMAL;
+
+uint8_t selectedParameter = 0; // Параметр, який зараз редагується
+uint8_t hours = 2, minutes = 25, seconds = 0, day = 13, month = 8, year = 24; // Значення часу і дати
+uint8_t alarm_hours = 12, alarm_minutes = 0;
+// Максимальні значення для кожного параметра
+const uint8_t maxValues[] = {23, 59, 59, 31, 12, 99}; // год, хв, сек, день, міс, рік
+uint8_t latestgetCurrentValue = 100;
+volatile uint8_t HOURS = 0;
+volatile uint8_t MINUTES = 0;
+
+uint8_t* getSelectedValuePtr() {
+    switch (selectedParameter) {
+        case 0: return &hours;
+        case 1: return &minutes;
+        case 2: return &seconds;
+        case 3: return &day;
+        case 4: return &month;
+        case 5: return &year;
+        default: return &hours; // За замовчуванням
+    }
+}
+
+
+void increaseValue() {
+    uint8_t *valuePtr = getSelectedValuePtr();
+    (*valuePtr)++;
+
+    if (*valuePtr > maxValues[selectedParameter]) {
+        *valuePtr = 0;
+    }
+
+}
+
+uint8_t getCurrentValue() {
+    switch (selectedParameter) {
+        case 0: return hours;
+        case 1: return minutes;
+        case 2: return seconds;
+        case 3: return day;
+        case 4: return month;
+        case 5: return year;
+        default: return 0;
+    }
+}
+
+void displayCurrentSetting() {
+
+
+    char valueStr[3];
+
+
+    if(getCurrentValue() != latestgetCurrentValue){
+    	latestgetCurrentValue = getCurrentValue();
+    	lcd_clr();
+    	    set_cursor(0, 0);
+    	    lcd_str("Set ");
+
+    	    switch (selectedParameter) {
+    	        case 0: lcd_str("Hour:"); break;
+    	        case 1: lcd_str("Minute:"); break;
+    	        case 2: lcd_str("Second:"); break;
+    	        case 3: lcd_str("Day:"); break;
+    	        case 4: lcd_str("Month:"); break;
+    	        case 5: lcd_str("Year:"); break;
+    	    }
+    	    sprintf(valueStr, "%02d", getCurrentValue());
+    	set_cursor(0, 1);
+    	lcd_str(valueStr);
+    }
+
+
+}
+
+
+
+void saveSettings() {
+    // Наприклад, зберігання налаштувань у DS1307
+    DS1307_Set_Time(hours, minutes, seconds);
+    DS1307_Set_Date(day, month, year);
+}
+
 
 int main(void)
 {
@@ -80,68 +177,128 @@ int main(void)
   	HAL_Delay(50);
   	EEPROM_Read(0x0000, readData, EEPROM_PAGE_SIZE);
   	sprintf(str, "%0.2x, %0.2x, %0.2x, %0.2x", readData[0], readData[1], readData[2], readData[3]);
-  	set_cursor(0, 0);
-  	lcd_str("Time:");
-  	HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
-
+  	//set_cursor(0, 0);
+  	//lcd_str("Time:");
+  	//HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+  	display_time();
   	uint8_t after_exti = 0;
-  	while (1)
-  	{
-  		display_time();
-  	}
+
+	while (1) {
+  		if (HAL_GPIO_ReadPin(GPIOB, Alarm_button_Pin) == 0) {
+  		            HAL_Delay(50);
+  		            if (HAL_GPIO_ReadPin(GPIOB, Alarm_button_Pin) == 0) {
+
+  		                if (currentMode == MODE_NORMAL) {
+  		                    currentMode = MODE_SET_TIME;
+  		                    enterSetTimeMode();
+  		                } else if (currentMode == MODE_SET_TIME) {
+  		                    currentMode = MODE_SET_ALARM;
+  		                    enterSetAlarmMode();
+  		                    finish_menu++;
+  		                } else if (currentMode == MODE_SET_ALARM) {
+  		                    currentMode = MODE_NORMAL;
+  		                    display_time();
+  		                }
+
+
+  		                while (HAL_GPIO_ReadPin(GPIOB, Alarm_button_Pin) == 0) {
+  		                    HAL_Delay(10);
+  		                }
+  		            }
+  		        }
+  		if (currentMode == MODE_NORMAL) {
+  		        display_time();
+  		}
+	}
 
 
 }
 
-void EXTI9_5_IRQHandler(void)
-{
-    /* Перевірка, чи це дійсно переривання від піну PA1 */
-    if (__HAL_GPIO_EXTI_GET_IT(GPIO_PIN_9) != RESET)
-    {
-    	__HAL_GPIO_EXTI_CLEAR_IT(GPIO_PIN_9);
-    	  			set_cursor(0, 0);
-    	  			lcd_str("Setting menu:");
-    	  			while(HAL_GPIO_ReadPin(GPIOB, Alarm_button_Pin) == 1){
 
 
-    	  			}
+
+void enterSetTimeMode() {
+    lcd_clr();
+    set_cursor(0, 0);
+    lcd_str("Set Time/Date");
+
+    while (1) {
+        // Відображення параметра
+        displayCurrentSetting();
+
+
+        // Обробка натискання кнопок
+        if (HAL_GPIO_ReadPin(GPIOB, Alarm_button_Pin) == 0) { // Кнопка для зміни значення
+            HAL_Delay(200); // Антидребезг
+            increaseValue();
+
+
+        }
+
+        if (HAL_GPIO_ReadPin(GPIOB, Alarm_setting_Pin) == 0) { // Кнопка для переходу до наступного параметра
+            HAL_Delay(200); // Антидребезг
+            selectedParameter++;
+            if (selectedParameter > 5) {
+                selectedParameter = 0;
+                saveSettings();
+                break; // Вихід з режиму налаштування
+            }
+        }
     }
 }
 
+void enterSetAlarmMode(){
+	lcd_clr();
+	set_cursor(0, 0);
+	lcd_str("Set alarm:");
 
-
-void display_time(){
-	uint8_t timeData[3] = {0};
-	uint8_t seconds = 0;
-	uint8_t minutes = 0;
-	uint8_t hours = 0;
-	if (DS1307_Read_Time(timeData) == HAL_OK){
-
-	  	        seconds = BCD_to_Decimal(timeData[0] & 0x7F);
-	  	        minutes = BCD_to_Decimal(timeData[1]);
-	  	        hours = BCD_to_Decimal(timeData[2]);
-	  	        char timeStr[9];
-	  	        sprintf(timeStr, "%02d:%02d", hours, minutes);
-
-	  	        if (minutes != last_minutes)
-	  	        {
-	  	            last_minutes = minutes;
-	  	            lcd_clr();
-	  	            HAL_Delay(10); // Додати затримку після очищення дисплея
-	  	            set_cursor(0, 0);
-	  	            lcd_str("Time:");
-	  	            set_cursor(0, 1);
-	  	            lcd_str(timeStr);
-	  	        }
-	  	        else if (hours == 00 && minutes == 54)
-	  	        {
-	  	            if (HAL_GPIO_ReadPin(GPIOB, Alarm_button_Pin) == 0)
-	  	            {
-	  	                PlayMelody();
-	  	            }
-	  	        }
-	 }
 }
+
+
+void display_time() {
+    uint8_t timeData[7] = {0}; // Містить дані часу і дати: секунди, хвилини, години, день, місяць, рік
+    uint8_t seconds = 0;
+    uint8_t minutes = 0;
+    uint8_t hours = 0;
+    uint8_t day = 0;
+    uint8_t month = 0;
+    uint8_t year = 0;
+
+    if (DS1307_Read_Time(timeData) == HAL_OK) {
+
+        // Розпаковка даних
+        seconds = BCD_to_Decimal(timeData[0] & 0x7F); // Очистка CH біт
+        minutes = BCD_to_Decimal(timeData[1]);
+        hours = BCD_to_Decimal(timeData[2]);
+        day = BCD_to_Decimal(timeData[3]);
+        month = BCD_to_Decimal(timeData[4]);
+        year = BCD_to_Decimal(timeData[5]);
+
+        // Формування рядка часу і дати
+        char timeStr[20];
+        sprintf(timeStr, "%02d/%02d/%02d %02d:%02d", day, month, year, hours, minutes);
+
+        // Оновлення екрану, якщо потрібно
+        if (minutes != last_minutes || finish_menu == 1) {
+            finish_menu = 0;
+            last_minutes = minutes;
+            lcd_clr();
+            HAL_Delay(10); // Затримка після очищення дисплея
+            set_cursor(0, 0);
+            lcd_str("Date & Time:");
+            set_cursor(0, 1);
+            lcd_str(timeStr);
+        }
+
+        // Перевірка для спрацювання будильника
+        if (hours == 9 && minutes == 30) {
+        	while(HAL_GPIO_ReadPin(GPIOB, Alarm_button_Pin) != 0){
+        		PlayMelody();
+        	}
+        }
+    }
+}
+
 
 void SetBuzzerFrequency(uint32_t frequency) {
     if (frequency == 0) {
@@ -205,6 +362,25 @@ HAL_StatusTypeDef DS1307_Set_Time(uint8_t hours, uint8_t minutes, uint8_t second
     return HAL_OK;
 }
 
+HAL_StatusTypeDef DS1307_Set_Date(uint8_t day, uint8_t month, uint8_t year) {
+    HAL_StatusTypeDef status;
+
+    // Записуємо день
+    status = DS1307_Write_Register(DS1307_DAY_REG, Decimal_to_BCD(day));
+    if (status != HAL_OK) return status;
+
+    // Записуємо місяць
+    status = DS1307_Write_Register(DS1307_MONTH_REG, Decimal_to_BCD(month));
+    if (status != HAL_OK) return status;
+
+    // Записуємо рік
+    status = DS1307_Write_Register(DS1307_YEAR_REG, Decimal_to_BCD(year));
+    if (status != HAL_OK) return status;
+
+    return HAL_OK;
+}
+
+
 // Функція для зчитування часу
 HAL_StatusTypeDef DS1307_Read_Time(uint8_t *timeData) {
     HAL_StatusTypeDef status;
@@ -219,6 +395,13 @@ HAL_StatusTypeDef DS1307_Read_Time(uint8_t *timeData) {
 
     // Зчитуємо години
     status = DS1307_Read_Register(DS1307_HOURS_REG, &timeData[2]);
+    if (status != HAL_OK) return status;
+
+    status = DS1307_Read_Register(DS1307_DAY_REG, &timeData[3]);
+    if (status != HAL_OK) return status;
+    status = DS1307_Read_Register(DS1307_MONTH_REG, &timeData[4]);
+    if (status != HAL_OK) return status;
+    status = DS1307_Read_Register(DS1307_YEAR_REG, &timeData[5]);
     if (status != HAL_OK) return status;
 
     return HAL_OK;
@@ -426,7 +609,7 @@ static void MX_TIM2_Init(void)
   htim2.Instance = TIM2;
   htim2.Init.Prescaler = 0;
   htim2.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim2.Init.Period = 999;
+  htim2.Init.Period = 999999;
   htim2.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim2.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_PWM_Init(&htim2) != HAL_OK)
@@ -440,7 +623,7 @@ static void MX_TIM2_Init(void)
     Error_Handler();
   }
   sConfigOC.OCMode = TIM_OCMODE_PWM1;
-  sConfigOC.Pulse = 0;
+  sConfigOC.Pulse = 500;
   sConfigOC.OCPolarity = TIM_OCPOLARITY_HIGH;
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   if (HAL_TIM_PWM_ConfigChannel(&htim2, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
@@ -509,12 +692,10 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : Alarm_setting_Pin */
   GPIO_InitStruct.Pin = Alarm_setting_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(Alarm_setting_GPIO_Port, &GPIO_InitStruct);
-  /* Налаштування пріоритету та увімкнення переривань для обох кнопок */
-  HAL_NVIC_SetPriority(EXTI9_5_IRQn, 2, 0);
-  HAL_NVIC_EnableIRQ(EXTI9_5_IRQn);
+
 
 }
 
