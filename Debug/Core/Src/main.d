@@ -29,7 +29,9 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- ../Core/Inc/pitches.h
+ ../Core/Inc/System.h ../Core/Inc/LCD.h ../Core/Inc/EEPROM.h \
+ ../Core/Inc/DS1307.h ../Core/Inc/UART.h ../Core/Inc/main.h \
+ ../Core/Inc/Buzzer.h ../Core/Inc/I2C_Scan.h ../Core/Inc/Clock.h
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
 ../Core/Inc/stm32f4xx_hal_conf.h:
@@ -61,4 +63,12 @@ Core/Src/main.o: ../Core/Src/main.c ../Core/Inc/main.h \
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h:
-../Core/Inc/pitches.h:
+../Core/Inc/System.h:
+../Core/Inc/LCD.h:
+../Core/Inc/EEPROM.h:
+../Core/Inc/DS1307.h:
+../Core/Inc/UART.h:
+../Core/Inc/main.h:
+../Core/Inc/Buzzer.h:
+../Core/Inc/I2C_Scan.h:
+../Core/Inc/Clock.h:

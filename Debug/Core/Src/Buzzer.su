@@ -1,0 +1,2 @@
+../Core/Src/Buzzer.c:3:6:SetBuzzerFrequency	24	static
+../Core/Src/Buzzer.c:14:6:PlayMelody	152	static

@@ -1,0 +1,7 @@
+../Core/Src/LCD.c:4:6:LCD_Init	8	static
+../Core/Src/LCD.c:25:6:LCD_Set_Cursor	24	static
+../Core/Src/LCD.c:31:6:LCD_Send_Char	16	static
+../Core/Src/LCD.c:36:6:LCD_Str	16	static
+../Core/Src/LCD.c:41:6:LCD_Clr	8	static
+../Core/Src/LCD.c:47:6:LCD_Send_Comand	32	static
+../Core/Src/LCD.c:57:6:LCD_Send_Data	32	static

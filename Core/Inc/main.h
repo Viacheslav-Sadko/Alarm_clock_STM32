@@ -29,25 +29,9 @@ extern "C" {
 /* Includes ------------------------------------------------------------------*/
 #include "stm32f4xx_hal.h"
 
-/* Private includes ----------------------------------------------------------*/
-/* USER CODE BEGIN Includes */
-
-/* USER CODE END Includes */
-
-/* Exported types ------------------------------------------------------------*/
-/* USER CODE BEGIN ET */
-
-/* USER CODE END ET */
-
-/* Exported constants --------------------------------------------------------*/
-/* USER CODE BEGIN EC */
-
-/* USER CODE END EC */
-
-/* Exported macro ------------------------------------------------------------*/
-/* USER CODE BEGIN EM */
-
-/* USER CODE END EM */
+extern I2C_HandleTypeDef hi2c1;
+extern TIM_HandleTypeDef htim2;
+extern UART_HandleTypeDef huart1;
 
 void HAL_TIM_MspPostInit(TIM_HandleTypeDef *htim);
 
@@ -59,10 +43,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define Alarm_button_Pin GPIO_PIN_8
-#define Alarm_button_GPIO_Port GPIOB
-#define Alarm_setting_Pin GPIO_PIN_9
-#define Alarm_setting_GPIO_Port GPIOB
+#define SET_Pin GPIO_PIN_9
+#define SET_GPIO_Port GPIOB
+#define OK_Pin GPIO_PIN_8
+#define OK_GPIO_Port GPIOB
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

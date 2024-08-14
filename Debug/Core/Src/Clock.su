@@ -1,0 +1,8 @@
+../Core/Src/Clock.c:18:10:getSelectedValuePtr	4	static
+../Core/Src/Clock.c:31:6:increaseValue	16	static
+../Core/Src/Clock.c:41:9:getCurrentValue	4	static
+../Core/Src/Clock.c:53:6:displayCurrentSetting	16	static
+../Core/Src/Clock.c:81:6:saveSettings	8	static
+../Core/Src/Clock.c:87:6:enterSetTimeMode	8	static
+../Core/Src/Clock.c:117:6:enterSetAlarmMode	8	static
+../Core/Src/Clock.c:125:6:display_time	72	static
