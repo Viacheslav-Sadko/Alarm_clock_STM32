@@ -17,6 +17,7 @@ void PlayMelody(void) {
 
 
     for (int i = 0; i < sizeof(melody) / sizeof(melody[0]); i++) {
+
         SetBuzzerFrequency(melody[i]);
         HAL_Delay(durations[i]);  // Затримка для відтворення ноти
         SetBuzzerFrequency(0);  // Зупинка зумера

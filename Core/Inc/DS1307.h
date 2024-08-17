@@ -16,7 +16,7 @@
 
 HAL_StatusTypeDef DS1307_Write_Register(uint8_t reg, uint8_t data);
 HAL_StatusTypeDef DS1307_Read_Register(uint8_t reg, uint8_t *data);
-HAL_StatusTypeDef DS1307_Set_Time(uint8_t hours, uint8_t minutes, uint8_t seconds);
+HAL_StatusTypeDef DS1307_Set_Time(uint8_t hours, uint8_t minutes);
 HAL_StatusTypeDef DS1307_Set_Date(uint8_t day, uint8_t month, uint8_t year);
 HAL_StatusTypeDef DS1307_Read_Time(uint8_t *timeData);
 

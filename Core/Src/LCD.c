@@ -41,7 +41,7 @@ void LCD_Str(uint8_t  str[])
 void LCD_Clr()
 {
 	LCD_Send_Comand(0b1);
-    HAL_Delay(1);
+    HAL_Delay(10);
 }
 
 void LCD_Send_Comand(uint8_t  Command){
