@@ -13,6 +13,8 @@ I2C_HandleTypeDef hi2c1;
 TIM_HandleTypeDef htim2;
 UART_HandleTypeDef huart1;
 uint8_t flag_set = 0;
+
+
 int main(void)
 {
   HAL_Init();
@@ -32,6 +34,8 @@ int main(void)
   uint8_t status = 255;
   uint8_t last_status = 255;
   char buffer[31];
+  EEPROM_Read(0, &alarm_hours, 1);
+  EEPROM_Read(1, &alarm_minutes, 1);
   while (1)
   {
       // Відображаємо час в звичайному режимі

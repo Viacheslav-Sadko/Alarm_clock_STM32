@@ -1,7 +1,7 @@
 #include "Clock.h"
 #include "DS1307.h"
 #include "main.h"
-
+#include "EEPROM.h"
 
 Mode currentMode = MODE_NORMAL;
 
@@ -26,6 +26,24 @@ uint8_t* getSelectedValuePtr() {
 }
 
 
+uint8_t* alarm_getSelectedValuePtr() {
+    switch (selectedParameter) {
+        case 0: return &alarm_hours;
+        case 1: return &alarm_minutes;
+        default: return &alarm_hours; // За замовчуванням
+    }
+}
+
+void alarm_increaseValue() {
+    uint8_t *valuePtr = alarm_getSelectedValuePtr();
+    (*valuePtr)++;
+
+    if (*valuePtr > maxValues[selectedParameter]) {
+        *valuePtr = 0;
+    }
+
+}
+
 void increaseValue() {
     uint8_t *valuePtr = getSelectedValuePtr();
     (*valuePtr)++;
@@ -44,40 +62,69 @@ uint8_t getCurrentValue() {
     }
 }
 
-void displayCurrentSetting() {
+uint8_t alarm_getCurrentValue() {
+    switch (selectedParameter) {
+        case 0: return alarm_hours;
+        case 1: return alarm_minutes;
+        default: return 0;
+    }
+}
+
+
+void displayCurrentSetting(uint8_t mode) {
 
 	HAL_Delay(80);
     char valueStr[3];
 
+    switch(mode){
+    case 0:
+		if(getCurrentValue() != latestgetCurrentValue){
+				latestgetCurrentValue = getCurrentValue();
+				LCD_Clr();
+				LCD_Set_Cursor(0, 0);
+					LCD_Str("Set ");
 
-    if(getCurrentValue() != latestgetCurrentValue){
-    	latestgetCurrentValue = getCurrentValue();
-    	LCD_Clr();
-    	LCD_Set_Cursor(0, 0);
-    	    LCD_Str("Set ");
+					switch (selectedParameter) {
+						case 0: LCD_Str("Hour:"); break;
+						case 1: LCD_Str("Minute:"); break;
+					}
+					sprintf(valueStr, "%02d", getCurrentValue());
+					LCD_Set_Cursor(0, 1);
+				LCD_Str(valueStr);
+			}
+    break;
+    case 1:
+    	if(alarm_getCurrentValue() != latestgetCurrentValue){
+    					latestgetCurrentValue = alarm_getCurrentValue();
+    					LCD_Clr();
+    					LCD_Set_Cursor(0, 0);
+    						LCD_Str("Set ");
 
-    	    switch (selectedParameter) {
-    	        case 0: LCD_Str("Hour:"); break;
-    	        case 1: LCD_Str("Minute:"); break;
-    	    }
-    	    sprintf(valueStr, "%02d", getCurrentValue());
-    	    LCD_Set_Cursor(0, 1);
-    	LCD_Str(valueStr);
+    						switch (selectedParameter) {
+    							case 0: LCD_Str("Hour:"); break;
+    							case 1: LCD_Str("Minute:"); break;
+    						}
+    						sprintf(valueStr, "%02d", alarm_getCurrentValue());
+    						LCD_Set_Cursor(0, 1);
+    					LCD_Str(valueStr);
+    				}
+    break;
     }
+
 
 
 }
 
 DS1307_Set_Time_alarm(uint8_t hours, uint8_t minutes){
-	alarm_hours = hours;
-	alarm_minutes = minutes;
+	EEPROM_Write(0, &alarm_hours, 1);
+	EEPROM_Write(1, &alarm_minutes, 1);
 }
 
 void saveSettings(uint8_t mode) {
 	if(mode == 0){
 		DS1307_Set_Time(hours, minutes);
 	}else if(mode == 1){
-		DS1307_Set_Time_alarm(hours, minutes);
+		DS1307_Set_Time_alarm(alarm_hours, alarm_minutes);
 	}
 
 }
@@ -89,7 +136,7 @@ void enterSetTimeMode() {
 
     while (1) {
         // Відображення параметра
-        displayCurrentSetting();
+        displayCurrentSetting(0);
         // Обробка натискання кнопок
         if (HAL_GPIO_ReadPin(GPIOB, OK_Pin) == 0) { // Кнопка для зміни значення
             HAL_Delay(30); // Антидребезг
@@ -113,10 +160,10 @@ void enterSetAlarmMode(){
 	LCD_Set_Cursor(0, 0);
 	LCD_Str("Set alarm:");
 	while (1) {
-		displayCurrentSetting();
+		displayCurrentSetting(1);
 		if (HAL_GPIO_ReadPin(GPIOB, OK_Pin) == 0) {
 			HAL_Delay(30);
-			increaseValue();
+			alarm_increaseValue();
 		}
 		if (HAL_GPIO_ReadPin(GPIOB, SET_Pin) == 0) {
 			HAL_Delay(40);

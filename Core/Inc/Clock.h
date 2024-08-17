@@ -6,8 +6,13 @@
 uint8_t* getSelectedValuePtr();
 void increaseValue();
 uint8_t getCurrentValue();
-void displayCurrentSetting();
+void displayCurrentSetting(uint8_t mode);
 void saveSettings(uint8_t mode);
+
+uint8_t* alarm_getSelectedValuePtr();
+void alarm_increaseValue();
+uint8_t alarm_getCurrentValue();
+extern uint8_t alarm_hours, alarm_minutes;
 
 void display_time();
 void enterSetTimeMode();
